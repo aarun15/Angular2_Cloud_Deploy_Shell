@@ -1,0 +1,8 @@
+logging.level.com.sos: INFO
+appName: sampleapp
+appDescription: Inventory Floor Cloud Bay Directed Packdown
+buildNumber: 1
+contactEmail: arunarivarasan15@gmail.com
+releaseNumber: 2.0.59
+buildTimeStamp: 20151031131313
+spring.batch.job.enabled: false

@@ -1,0 +1,8 @@
+---
+applications:
+- name: sampleApp-dev
+  memory: 512M
+  buildpack: staticfile_buildpack
+  instances: 2
+  random-route: false
+  host: sampleApp-dev

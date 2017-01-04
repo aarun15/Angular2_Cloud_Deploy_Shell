@@ -1,0 +1,127 @@
+buildscript {
+
+
+  repositories {
+            jcenter()
+            maven {
+                url 'https://maven.artifactory.homedepot.com/artifactory/libs-release-local'
+                credentials {
+
+                    username = System.getenv('SVC_ACCT_USERNAME')
+                    password = System.getenv('SVC_ACCT_PASSWORD')
+                }
+            }
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
+            maven {
+                url 'https://maven.artifactory.homedepot.com/artifactory/plugins-release-local'
+                credentials {
+                username = System.getenv('SVC_ACCT_USERNAME')
+                password = System.getenv('SVC_ACCT_PASSWORD')
+                }
+            }
+            maven {
+                url "http://artifactory.homedepot.com/informix-release-local/"
+            }
+            mavenCentral()
+            mavenLocal()
+            jcenter()
+
+    dependencies {
+
+      classpath(
+
+                    "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.0.1",
+
+                    "com.homedepot.sos.sif:VersionPlugin:2.0.0",
+                    "com.homedepot.sos.sif:GitUpdatePlugin:1.0.0",
+                    "org.yaml:snakeyaml:1.17",
+                    "org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0",
+                    "io.spring.gradle:dependency-management-plugin:0.5.6.RELEASE"
+                        )
+    }
+}
+}
+apply plugin: 'base'
+
+apply plugin: 'groovy'
+apply plugin: 'jacoco'
+apply plugin: 'org.sonarqube'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
+apply plugin: 'com.homedepot.sa.im.versionplugin'
+apply plugin: 'com.homedepot.sa.im.gitupdateplugin'
+
+import org.yaml.snakeyaml.Yaml
+
+
+group = 'com.homedepot.sos.sif'
+jar.baseName = project.name
+
+repositories {
+    maven { url "${artifactory_contextUrl}" + "/libs-release" }
+    mavenCentral()
+    maven {url "http://artifactory.homedepot.com/libs-arch-local/"}
+    maven {url "http://artifactory.homedepot.com/libs-release-local/"}
+}
+
+
+jacoco {
+    toolVersion = "0.7.6.201602180812"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.00'
+
+}
+//Artifactory plugin
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"
+    publish {
+
+        repository {
+            repoKey = 'libs-release-local'
+            // username = System.getenv('SVC_ACCT_USERNAME')
+            // password = System.getenv('SVC_ACCT_PASSWORD')
+            username = 'sxv8510'
+            password = 'Swrnov09+'
+            maven = true
+        }
+        defaults {
+            publications('mavenJava')
+            publishArtifacts = true
+        }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+          artifact(file("$rootDir/build/libs/"+project.name+"-"+ project.version +".jar"))
+        }
+    }
+
+}
+
+task setVersions <<{
+            def yaml = new Yaml()
+            def appProperties = file("src/main/resources/application.yml").text
+            def appList = yaml.loadAll(appProperties)
+            project.version = ((String)((Map) appList.getAt(0))["releaseNumber"]) + "-SNAPSHOT"
+            println("Setting version from application.yml: " + project.version)
+            rootProject.version=project.version
+        }
+
+task setReleaseVersions {
+             def yaml = new Yaml()
+             def appProperties = file("src/main/resources/application.yml").text
+             def appList = yaml.loadAll(appProperties)
+             project.version = ((String)((Map) appList.getAt(0))["releaseNumber"]) +  "-RELEASE"
+             println("Setting version from application.yml: " + project.version)
+             rootProject.version=project.version
+             }
+artifactoryPublish {}.dependsOn('setReleaseVersions')
